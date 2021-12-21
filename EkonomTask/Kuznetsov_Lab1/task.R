@@ -1,0 +1,163 @@
+install.packages("MASS")
+library(MASS)
+install.packages("lmtest")
+library(lmtest)
+install.packages("forecast")
+library(forecast)
+install.packages("tseries")
+library(tseries)
+install.packages("orcutt")
+library(orcutt)
+install.packages("sandwich")
+library(sandwich)
+install.packages("psych")
+library(psych)
+install.packages("regclass")
+library(regclass)
+install.packages("mctest")
+library(mctest)
+install.packages("urca")
+library(urca)
+
+setwd('C:/Users/mpapa/Documents/EkonomTask/Kuznetsov_Lab1/')
+data <- read.table('data.txt', sep = '\t', dec = ',', header = TRUE, encoding = 'UTF-8')
+data
+
+cor(data)
+
+dataNew = data[1:10,] #Обучающая выборка
+dataNew
+cor(dataNew)
+
+dataNew1 = data[11:14,] #контролирующая выборка
+dataNew1
+cor(dataNew1)
+
+#Спецификация модели: yi = a + b1*x1 + e
+#yi = 14.3223 + 0.9472*xi
+
+y = dataNew$yi
+y
+
+x = dataNew$xi
+x
+
+yNew = dataNew1$yi
+yNew
+
+xNew = dataNew1$xi
+xNew
+
+# Диаграмма рассеяния
+plot(y, x, col = 'red')
+
+m = lm(y~x)
+m
+sm = summary(m)
+sm
+
+m2 = lm(yNew~xNew)
+m2
+sm2 = summary(m2)
+sm2
+
+'''
+Запишите оцененную модель в стандартной форме.
+Рассчитайте среднюю относительную ошибку аппроксимации и интерпретируйте ее значение. +  
+Сделайте выводы о качестве модели. Проверьте статистическую значимость регрессии в целом.  + 
+Проверьте статистическую значимость оценок параметров модели.  + 
+Постройте доверительные интервалы для параметров модели. 
+Дайте экономическую интерпретацию оценкам параметров. + 
+'''
+
+confint <- confint(m, level = 0.95) # Доверительные интервалы
+confint
+
+determ <- sm$r.squared
+determ
+
+adjust_determ <- sm$adj.r.squared
+adjust_determ
+
+st_error <- sqrt(deviance(m)/df.residual(m))
+st_error
+
+approx <- sum(abs(sm$residuals/y)) / length(y) * 100
+approx
+
+f_test <- sm$fstatistic[1]
+f_test
+
+compare <- data.frame(
+  Коэффициент_детерминации=determ,
+  Скорректированный_коэффициент=adjust_determ,
+  Стандартная_ошибка_модели=st_error,
+  Ошибка_аппроксимации=approx,
+  F_тест=f_test
+)
+print(compare)
+
+
+dw = dwtest(m) # Тест Дарбина-Ватсона
+dw
+bg = bgtest(m,order = 1)
+bg
+gqtest(m, order.by = x, fraction = 0.25) # Тест Голдфельда-Квандта для x
+bptest(m, studentize = TRUE) # Тест Бреуша-Пагана
+
+#p-val > alpha -> нет гетероскедастичности!
+
+#Интервалы
+
+'''
+Постройте точечный и интервальный прогноз.
+Сделайте выводы об адекватности модели, используя 1 наблюдение в качестве контролирующей выборки.
+Осуществите точечное и интервальное прогнозирование потребления, 
+если располагаемый доход равен 55% от своего среднего 
+'''
+yi = dataNew$yi
+y1
+xi = dataNew$xi
+x1
+m = lm(yi~xi)
+m
+sm = summary(m)
+sm
+predict(m, newdata=dataNew1) #Точечный прогноз 
+predict(m,newdata=dataNew1, interval="prediction") #Индивидуальный
+predict(m,newdata=dataNew1, interval="confidence") #Доверительный
+
+
+data2 = data[2:14,]
+data2
+data3 = data[1:1,]
+data3
+
+
+yi = data2$yi
+yi
+xi = data2$xi
+xi
+
+m3 = lm(yi~xi)
+m3
+ 
+predict(m3,newdata=data3, interval="prediction") #Индивидуальный
+predict(m3,newdata=data3, interval="confidence") #Доверительный
+
+'''
+Осуществите точечное и интервальное прогнозирование потребления, 
+если располагаемый доход равен 55% от своего среднего
+'''
+sr = mean(xi)
+sr
+xT = 55 * sr / 100 
+xT
+
+data4 = data.frame(xi=xT)
+data4
+
+predict(m3, newdata=data4, interval="prediction")#Индивидуальный
+predict(m3,newdata=data4, interval="confidence") #Доверительный
+predict(m3, newdata=data4)
+
